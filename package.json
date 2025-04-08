@@ -1,0 +1,18 @@
+{
+    "name": "quasar-to-figma-converter",
+    "version": "1.0.0",
+    "description": "Plugin para converter componentes Quasar em componentes Figma",
+    "main": "code.js",
+    "scripts": {
+        "build": "copyfiles code.js ui.html manifest.json dist",
+        "watch": "chokidar 'code.js' 'ui.html' 'manifest.json' -c 'npm run build'"
+    },
+    "author": "Seu Nome",
+    "license": "MIT",
+    "devDependencies": {
+        "@figma/plugin-typings": "^1.82.0",
+        "chokidar": "^4.0.3",
+        "copyfiles": "^2.4.1",
+        "typescript": "^5.2.2"
+    }
+}

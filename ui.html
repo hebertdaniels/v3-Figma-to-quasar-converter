@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 16px;
+    }
+    
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    
+    .header h2 {
+      margin: 0;
+      font-size: 16px;
+    }
+    
+    .close-button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    
+    .code-input {
+      width: 100%;
+      height: 200px;
+      padding: 8px;
+      margin-bottom: 16px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 12px;
+      resize: vertical;
+    }
+    
+    .convert-button {
+      background-color: #18A0FB;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 8px 16px;
+      font-size: 14px;
+      cursor: pointer;
+      margin-bottom: 16px;
+      width: 100%;
+    }
+    
+    .convert-button:hover {
+      background-color: #0D8EE0;
+    }
+    
+    .feedback {
+      padding: 12px;
+      margin-top: 16px;
+      border-radius: 4px;
+      display: none;
+    }
+    
+    .success {
+      background-color: #E3F7E9;
+      color: #2A823A;
+      border: 1px solid #C2E9CF;
+    }
+    
+    .error {
+      background-color: #FFEBEE;
+      color: #D32F2F;
+      border: 1px solid #FFCDD2;
+    }
+    
+    .component-preview {
+      margin-top: 16px;
+      padding: 12px;
+      border: 1px solid #eee;
+      border-radius: 4px;
+      font-size: 12px;
+      background-color: #f9f9f9;
+      max-height: 200px;
+      overflow-y: auto;
+      display: none;
+    }
+    
+    .example-buttons {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    
+    .example-button {
+      background-color: #f0f0f0;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h2>Quasar to Figma Converter</h2>
+    <button class="close-button" id="close-button">✕</button>
+  </div>
+  
+  <div class="example-buttons">
+    <button class="example-button" id="example-button-button">Botão</button>
+    <button class="example-button" id="example-button-card">Card</button>
+  </div>
+  
+  <textarea 
+    class="code-input" 
+    id="code-input" 
+    placeholder="Cole aqui o código Vue.js/Quasar (incluindo as seções <template> e <script>)"></textarea>
+  
+  <button class="convert-button" id="convert-button">Converter para Figma</button>
+  
+  <div id="feedback" class="feedback"></div>
+  
+  <div id="component-preview" class="component-preview">
+    <h3>Estrutura do componente:</h3>
+    <pre id="component-structure"></pre>
+  </div>
+  
+  <script>
+    // Exemplos de código
+    const examples = {
+      button: `<template>
+  <q-btn color="primary" label="Botão Exemplo" />
+</template>`,
+      card: `<template>
+  <q-card class="my-card">
+    <q-card-section>
+      <div class="text-h6">Título do Card</div>
+      <div class="text-subtitle2">Subtítulo</div>
+    </q-card-section>
+  </q-card>
+</template>`
+    };
+    
+    // Elementos da UI
+    const closeButton = document.getElementById('close-button');
+    const convertButton = document.getElementById('convert-button');
+    const codeInput = document.getElementById('code-input');
+    const feedback = document.getElementById('feedback');
+    const componentPreview = document.getElementById('component-preview');
+    const componentStructure = document.getElementById('component-structure');
+    const exampleButtonButton = document.getElementById('example-button-button');
+    const exampleButtonCard = document.getElementById('example-button-card');
+    
+    // Preencher exemplos
+    exampleButtonButton.addEventListener('click', function() {
+      codeInput.value = examples.button;
+    });
+    
+    exampleButtonCard.addEventListener('click', function() {
+      codeInput.value = examples.card;
+    });
+    
+    // Botão fechar
+    closeButton.addEventListener('click', function() {
+      console.log('Fechando plugin');
+      parent.postMessage({
+        pluginMessage: {
+          type: 'close-plugin'
+        }
+      }, '*');
+    });
+    
+    // Botão converter
+    convertButton.addEventListener('click', function() {
+      console.log('Convertendo código');
+      const code = codeInput.value.trim();
+      
+      if (!code) {
+        showFeedback('Por favor, insira o código do componente.', 'error');
+        return;
+      }
+      
+      // Verificar se o código contém a tag <template>
+      if (!code.includes('<template>')) {
+        showFeedback('O código deve conter uma seção <template>.', 'error');
+        return;
+      }
+      
+      showFeedback('Convertendo o componente...');
+      
+      // Enviar o código para o script do plugin
+      parent.postMessage({
+        pluginMessage: {
+          type: 'convert-code',
+          code: code
+        }
+      }, '*');
+    });
+    
+    // Receber mensagens do plugin
+    window.onmessage = function(event) {
+      console.log('Mensagem recebida do plugin:', event.data);
+      
+      if (!event.data.pluginMessage) {
+        console.log('Mensagem sem pluginMessage');
+        return;
+      }
+      
+      const message = event.data.pluginMessage;
+      
+      if (message.type === 'conversion-success') {
+        showFeedback('Componente convertido com sucesso!', 'success');
+        
+        // Mostrar estrutura do componente
+        componentStructure.textContent = message.structure;
+        componentPreview.style.display = 'block';
+      } 
+      else if (message.type === 'conversion-error') {
+        showFeedback('Erro na conversão: ' + message.error, 'error');
+        componentPreview.style.display = 'none';
+      }
+    };
+    
+    // Mostrar feedback
+    function showFeedback(message, type) {
+      feedback.textContent = message;
+      feedback.style.display = 'block';
+      
+      if (type) {
+        feedback.className = 'feedback ' + type;
+      } else {
+        feedback.className = 'feedback';
+      }
+    }
+  </script>
+</body>
+</html>
